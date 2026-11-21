@@ -97,7 +97,7 @@ Make sure you have the following installed:
 Clone the repository:
 
 ```bash
-git clone https://github.com/thevalidcode/basstap.git
+git clone https://github.com/thevalidcreative/basstap.git
 ```
 
 Navigate into the project:
@@ -232,11 +232,11 @@ I'm a software engineer interested in building useful products, exploring techno
 
 Connect with me:
 
-- **Instagram:** [@thevalidcode](https://instagram.com/thevalidcode)
-- **LinkedIn:** [@thevalidcode](https://linkedin.com/in/thevalidcode)
-- **X (Twitter):** [@thevalidcode](https://x.com/thevalidcode)
+- **Instagram:** [@thevalidcreative](https://instagram.com/thevalidcreative)
+- **LinkedIn:** [@thevalidcreative](https://linkedin.com/in/thevalidcreative)
+- **X (Twitter):** [@yovalidcreative](https://x.com/yovalidcreative)
 - **Portfolio:** [thevalidcreative.com](https://thevalidcreative.com)
-- **GitHub:** [@thevalidcode](https://github.com/thevalidcode)
+- **GitHub:** [@thevalidcreative](https://github.com/thevalidcreative)
 
 ---
 

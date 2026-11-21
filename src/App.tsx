@@ -24,10 +24,12 @@ export default function App() {
   const [selectedKey, setSelectedKey] = useState<ChromaticKey>("C");
   const [soundStyle, setSoundStyle] = useState<SoundStyle>("finger");
   const [showChromatic, setShowChromatic] = useState(false);
+  const [sustainEnabled, setSustainEnabled] = useState(true);
   const [pressedNotes, setPressedNotes] = useState<Set<string>>(new Set());
   const engineRef = useRef<BassAudioEngine | null>(null);
   const soundStyleRef = useRef(soundStyle);
   const selectedKeyRef = useRef(selectedKey);
+  const sustainEnabledRef = useRef(sustainEnabled);
 
   if (!engineRef.current) engineRef.current = new BassAudioEngine();
 
@@ -38,6 +40,10 @@ export default function App() {
   useEffect(() => {
     selectedKeyRef.current = selectedKey;
   }, [selectedKey]);
+
+  useEffect(() => {
+    sustainEnabledRef.current = sustainEnabled;
+  }, [sustainEnabled]);
 
   useEffect(() => {
     const engine = engineRef.current!;
@@ -81,13 +87,14 @@ export default function App() {
       soundStyleRef.current,
       sample.pitchName,
       sample.playbackSemitones,
+      sustainEnabledRef.current,
     ).catch((error) => {
       console.error(error);
     });
   };
 
-  const stopNote = (noteId: string) => {
-    engineRef.current?.stop(noteId);
+  const stopNote = (noteId: string, allowNatural = false) => {
+    engineRef.current?.stop(noteId, true, allowNatural);
     setPressedNotes((current) => {
       const next = new Set(current);
       next.delete(noteId);
@@ -148,10 +155,26 @@ export default function App() {
                 <span className="toggle-thumb" />
               </span>
             </label>
+            <label className="chromatic-toggle">
+              <span>Sustain</span>
+              <input
+                type="checkbox"
+                checked={sustainEnabled}
+                onChange={(event) => {
+                  const enabled = event.target.checked;
+                  setSustainEnabled(enabled);
+                  sustainEnabledRef.current = enabled;
+                  engineRef.current?.setSustain(enabled);
+                }}
+              />
+              <span className="toggle-track" aria-hidden="true">
+                <span className="toggle-thumb" />
+              </span>
+            </label>
           </div>
           <div className="scale-heading" aria-live="polite">
             <strong>{selectedKey} Major</strong>
-            <span>Do through Upper Do</span>
+            <span>{sustainEnabled ? "Sustain on — tap once to continue" : "Do through Upper Do"}</span>
           </div>
           <div className="keypad" role="group" aria-label={`${selectedKey} Major bass solfege keypad`}>
             {visibleNotes.map((note) => (
@@ -162,10 +185,10 @@ export default function App() {
                 aria-label={`${note.solfege}, scale degree ${note.degree}`}
                 aria-pressed={pressedNotes.has(note.id)}
                 onPointerDown={(event) => handlePointerDown(event, note.id)}
-                onPointerUp={() => stopNote(note.id)}
+                onPointerUp={() => stopNote(note.id, sustainEnabledRef.current)}
                 onPointerCancel={() => stopNote(note.id)}
                 onPointerLeave={(event) => handlePointerLeave(event, note.id)}
-                onLostPointerCapture={() => stopNote(note.id)}
+                onLostPointerCapture={() => undefined}
                 onKeyDown={(event) => {
                   if ((event.key === "Enter" || event.key === " ") && !event.repeat) {
                     event.preventDefault();
@@ -173,7 +196,9 @@ export default function App() {
                   }
                 }}
                 onKeyUp={(event) => {
-                  if (event.key === "Enter" || event.key === " ") stopNote(note.id);
+                  if (event.key === "Enter" || event.key === " ") {
+                    stopNote(note.id, sustainEnabledRef.current);
+                  }
                 }}
                 onBlur={() => stopNote(note.id)}
               >

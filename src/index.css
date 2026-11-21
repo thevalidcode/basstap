@@ -52,6 +52,9 @@
 
 * {
   box-sizing: border-box;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 html,
@@ -378,7 +381,7 @@ a {
   padding: 14px 12px 12px;
   cursor: pointer;
   box-shadow: 0 1px 2px rgba(23, 23, 22, 0.025);
-  touch-action: manipulation;
+  touch-action: none;
   transition:
     transform 100ms ease,
     border-color 160ms ease,
@@ -515,7 +518,7 @@ a {
   }
 
   .chromatic-toggle {
-    width: 100%;
+    width: calc(50% - 4px);
     justify-content: space-between;
   }
 

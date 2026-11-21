@@ -3,7 +3,6 @@ import type { SoundStyle } from "../music";
 type ActiveNote = {
   source: AudioBufferSourceNode;
   gain: GainNode;
-  holdTimer: number | null;
 };
 
 export class BassAudioEngine {
@@ -46,8 +45,11 @@ export class BassAudioEngine {
     style: SoundStyle,
     pitchName: string,
     playbackSemitones = 0,
+    _sustainEnabled = true,
   ): Promise<void> {
-    this.stop(noteId);
+    const existing = this.active.get(noteId);
+    if (existing) return;
+    this.requests.delete(noteId);
     const request = ++this.nextRequest;
     this.requests.set(noteId, request);
     const context = this.getContext();
@@ -66,26 +68,23 @@ export class BassAudioEngine {
     source.connect(gain);
     gain.connect(this.master!);
     source.start();
-
-    const holdTimer = window.setTimeout(() => {
-      const active = this.active.get(noteId);
-      if (!active) return;
-      active.source.loop = true;
-      if (buffer.duration > 0.3) {
-        active.source.loopStart = buffer.duration * 0.12;
-        active.source.loopEnd = buffer.duration * 0.88;
-      }
-    }, 180);
-
-    this.active.set(noteId, { source, gain, holdTimer });
+    const active: ActiveNote = { source, gain };
+    this.active.set(noteId, active);
+    source.onended = () => {
+      if (this.active.get(noteId) === active) this.active.delete(noteId);
+    };
   }
 
-  stop(noteId: string, quick = true): void {
+  stop(noteId: string, quick = true, allowNatural = false): void {
     this.requests.delete(noteId);
     const active = this.active.get(noteId);
     if (!active || !this.context) return;
+    if (allowNatural) {
+      active.source.loop = false;
+      return;
+    }
+
     this.active.delete(noteId);
-    if (active.holdTimer !== null) window.clearTimeout(active.holdTimer);
 
     const now = this.context.currentTime;
     active.source.loop = false;
@@ -98,6 +97,12 @@ export class BassAudioEngine {
   stopAll(): void {
     for (const noteId of Array.from(this.requests.keys())) this.stop(noteId);
     for (const noteId of Array.from(this.active.keys())) this.stop(noteId);
+  }
+
+  setSustain(enabled: boolean): void {
+    for (const active of this.active.values()) {
+      if (!enabled) active.source.loop = false;
+    }
   }
 
   dispose(): void {
