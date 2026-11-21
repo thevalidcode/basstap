@@ -103,13 +103,15 @@ export default function App() {
   };
 
   const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>, noteId: string) => {
-    event.preventDefault();
-    event.currentTarget.setPointerCapture(event.pointerId);
-    startNote(noteId);
+    if (!sustainEnabledRef.current) {
+      event.preventDefault();
+      event.currentTarget.setPointerCapture(event.pointerId);
+      startNote(noteId);
+    }
   };
 
   const handlePointerLeave = (event: React.PointerEvent<HTMLButtonElement>, noteId: string) => {
-    stopNote(noteId);
+    if (!sustainEnabledRef.current) stopNote(noteId);
   };
 
   return (
@@ -185,19 +187,26 @@ export default function App() {
                 aria-label={`${note.solfege}, scale degree ${note.degree}`}
                 aria-pressed={pressedNotes.has(note.id)}
                 onPointerDown={(event) => handlePointerDown(event, note.id)}
-                onPointerUp={() => stopNote(note.id, sustainEnabledRef.current)}
+                onPointerUp={() => {
+                  if (!sustainEnabledRef.current) stopNote(note.id);
+                }}
+                onClick={() => {
+                  if (sustainEnabledRef.current) startNote(note.id);
+                }}
                 onPointerCancel={() => stopNote(note.id)}
                 onPointerLeave={(event) => handlePointerLeave(event, note.id)}
                 onLostPointerCapture={() => undefined}
                 onKeyDown={(event) => {
                   if ((event.key === "Enter" || event.key === " ") && !event.repeat) {
-                    event.preventDefault();
-                    startNote(note.id);
+                    if (!sustainEnabledRef.current) {
+                      event.preventDefault();
+                      startNote(note.id);
+                    }
                   }
                 }}
                 onKeyUp={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
-                    stopNote(note.id, sustainEnabledRef.current);
+                    if (!sustainEnabledRef.current) stopNote(note.id);
                   }
                 }}
                 onBlur={() => stopNote(note.id)}

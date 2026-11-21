@@ -40,24 +40,13 @@ export class BassAudioEngine {
     await Promise.all(pitchNames.map((pitchName) => this.load(style, pitchName)));
   }
 
-  async play(
+  private startSource(
     noteId: string,
-    style: SoundStyle,
-    pitchName: string,
-    playbackSemitones = 0,
-    _sustainEnabled = true,
-  ): Promise<void> {
-    const existing = this.active.get(noteId);
-    if (existing) return;
-    this.requests.delete(noteId);
-    const request = ++this.nextRequest;
-    this.requests.set(noteId, request);
-    const context = this.getContext();
-    await context.resume();
-    const buffer = await this.load(style, pitchName);
-    if (this.requests.get(noteId) !== request) return;
+    buffer: AudioBuffer,
+    playbackSemitones: number,
+  ): void {
     if (this.active.has(noteId)) return;
-
+    const context = this.getContext();
     const source = context.createBufferSource();
     const gain = context.createGain();
     source.buffer = buffer;
@@ -73,16 +62,55 @@ export class BassAudioEngine {
     source.onended = () => {
       if (this.active.get(noteId) === active) this.active.delete(noteId);
     };
+    void this.context?.resume();
+  }
+
+  async play(
+    noteId: string,
+    style: SoundStyle,
+    pitchName: string,
+    playbackSemitones = 0,
+    _sustainEnabled = true,
+  ): Promise<void> {
+    const existing = this.active.get(noteId);
+    if (existing) {
+      this.active.delete(noteId);
+      existing.source.onended = null;
+      try {
+        existing.source.stop();
+      } catch {
+        // The source may have ended naturally just before retriggering.
+      }
+      existing.gain.gain.cancelScheduledValues(this.context?.currentTime ?? 0);
+      existing.gain.disconnect();
+    }
+    this.requests.delete(noteId);
+    const request = ++this.nextRequest;
+    this.requests.set(noteId, request);
+    const context = this.getContext();
+    const cached = this.buffers.get(`${style}:${pitchName}`);
+    if (cached) {
+      this.startSource(noteId, cached, playbackSemitones);
+      return;
+    }
+    await context.resume();
+    const buffer = await this.load(style, pitchName);
+    if (this.requests.get(noteId) !== request) return;
+    if (this.active.has(noteId)) return;
+    this.startSource(noteId, buffer, playbackSemitones);
   }
 
   stop(noteId: string, quick = true, allowNatural = false): void {
-    this.requests.delete(noteId);
-    const active = this.active.get(noteId);
-    if (!active || !this.context) return;
     if (allowNatural) {
+      const active = this.active.get(noteId);
+      if (!active) return;
       active.source.loop = false;
       return;
     }
+
+    this.requests.delete(noteId);
+    const active = this.active.get(noteId);
+    if (!active || !this.context) return;
 
     this.active.delete(noteId);
 
