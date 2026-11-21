@@ -1,12 +1,8 @@
 import { useState } from "react";
 import CustomSelect from "./components/CustomSelect";
-import Fretboard from "./components/Fretboard";
-import LayoutSwitcher, { type InstrumentLayout } from "./components/LayoutSwitcher";
 import {
   CHROMATIC_KEYS,
-  SCALE_MODES,
   type ChromaticKey,
-  type ScaleMode,
 } from "./music";
 
 const SCALE_DEGREES = [
@@ -33,8 +29,6 @@ function BassMark() {
 
 export default function App() {
   const [selectedKey, setSelectedKey] = useState<ChromaticKey>("C");
-  const [selectedScale, setSelectedScale] = useState<ScaleMode>("Major");
-  const [layout, setLayout] = useState<InstrumentLayout>("Keypad");
 
   return (
     <div className="app-shell">
@@ -59,36 +53,21 @@ export default function App() {
                 onChange={setSelectedKey}
                 formatOption={(key) => key}
               />
-              {layout === "Fretboard" && (
-                <CustomSelect
-                  id="scale"
-                  label="Scale"
-                  value={selectedScale}
-                  options={SCALE_MODES}
-                  onChange={setSelectedScale}
-                />
-              )}
             </div>
-            <LayoutSwitcher layout={layout} onChange={setLayout} />
           </div>
-
-          {layout === "Keypad" ? (
-            <div className="keypad" role="group" aria-label={`${selectedKey} ${selectedScale} scale degrees`}>
-              {SCALE_DEGREES.map(({ degree, solfege }) => (
-                <button
-                  className="pad-button"
-                  type="button"
-                  key={degree}
-                  aria-label={`Scale degree ${degree}, ${solfege}`}
-                >
-                  <span className="degree">{degree}</span>
-                  <span className="solfege">{solfege}</span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <Fretboard selectedKey={selectedKey} scale={selectedScale} />
-          )}
+          <div className="keypad" role="group" aria-label={`${selectedKey} Major scale degrees`}>
+            {SCALE_DEGREES.map(({ degree, solfege }) => (
+              <button
+                className="pad-button"
+                type="button"
+                key={degree}
+                aria-label={`Scale degree ${degree}, ${solfege}`}
+              >
+                <span className="degree">{degree}</span>
+                <span className="solfege">{solfege}</span>
+              </button>
+            ))}
+          </div>
         </section>
       </main>
 

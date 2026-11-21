@@ -13,7 +13,7 @@ Learning and practicing bass shouldn't always require carrying a physical instru
 BassTap reimagines how people interact with a virtual bass guitar. Instead of traditional strings and frets, it uses a familiar eight-button keypad based on the musical scale:
 
 | Button | Solfège | Scale Degree |
-|---|---|---|
+| --- | --- | --- |
 | 1 | Do | Tonic |
 | 2 | Re | Major 2nd |
 | 3 | Mi | Major 3rd |
@@ -23,16 +23,14 @@ BassTap reimagines how people interact with a virtual bass guitar. Instead of tr
 | 7 | Ti | Major 7th |
 | 8 | Do | Octave |
 
-Select a musical key and, on the fretboard, choose a scale to highlight the notes that belong to it.
+Select a musical key to choose the major scale represented by the keypad.
 
 No complicated fretboards. No unnecessary controls. Just select, tap, and play.
 
 ## 🚀 Features
 
 - **Eight-Button Keypad:** Play the eight degrees of a musical scale.
-- **Fretboard Layout:** Play open strings and frets 1–12 on a compact four-string bass.
 - **Musical Key Selection:** Switch between all 12 chromatic keys.
-- **Scale Highlighting:** Compare Major, Minor, and chromatic notes while keeping every fret playable.
 - **Real Bass Sounds:** Use recorded bass guitar samples for an authentic playing experience.
 - **Fingerstyle and Pick:** Support for different bass playing techniques.
 - **Touch-to-Play:** Press and hold buttons to sustain notes, then release to trigger the natural note decay.
@@ -46,7 +44,7 @@ No complicated fretboards. No unnecessary controls. Just select, tap, and play.
 BassTap is built with modern web technologies.
 
 | Technology | Purpose |
-|---|---|
+| --- | --- |
 | React | User interface |
 | TypeScript | Type safety |
 | Vite | Development and build tooling |
