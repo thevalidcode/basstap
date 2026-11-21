@@ -47,6 +47,19 @@ export default function App() {
 
   useEffect(() => {
     const engine = engineRef.current!;
+    engine.setNoteEndListener((noteId) => {
+      setPressedNotes((current) => {
+        if (!current.has(noteId)) return current;
+        const next = new Set(current);
+        next.delete(noteId);
+        return next;
+      });
+    });
+    return () => engine.setNoteEndListener(null);
+  }, []);
+
+  useEffect(() => {
+    const engine = engineRef.current!;
     engine.stopAll();
     setPressedNotes(new Set());
 

@@ -12,6 +12,11 @@ export class BassAudioEngine {
   private readonly active = new Map<string, ActiveNote>();
   private readonly requests = new Map<string, number>();
   private nextRequest = 0;
+  private noteEndListener: ((noteId: string) => void) | null = null;
+
+  setNoteEndListener(listener: ((noteId: string) => void) | null): void {
+    this.noteEndListener = listener;
+  }
 
   private getContext(): AudioContext {
     if (!this.context) {
@@ -59,8 +64,15 @@ export class BassAudioEngine {
     source.start();
     const active: ActiveNote = { source, gain };
     this.active.set(noteId, active);
+    let ended = false;
     source.onended = () => {
-      if (this.active.get(noteId) === active) this.active.delete(noteId);
+      if (ended) return;
+      ended = true;
+      if (this.active.get(noteId) === active) {
+        this.active.delete(noteId);
+        this.noteEndListener?.(noteId);
+        this.noteEndListener?.(noteId);
+      }
     };
     void this.context?.resume();
   }
