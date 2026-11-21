@@ -103,11 +103,9 @@ export default function App() {
   };
 
   const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>, noteId: string) => {
-    if (!sustainEnabledRef.current) {
-      event.preventDefault();
-      event.currentTarget.setPointerCapture(event.pointerId);
-      startNote(noteId);
-    }
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    startNote(noteId);
   };
 
   const handlePointerLeave = (event: React.PointerEvent<HTMLButtonElement>, noteId: string) => {
@@ -190,23 +188,18 @@ export default function App() {
                 onPointerUp={() => {
                   if (!sustainEnabledRef.current) stopNote(note.id);
                 }}
-                onClick={() => {
-                  if (sustainEnabledRef.current) startNote(note.id);
-                }}
                 onPointerCancel={() => stopNote(note.id)}
                 onPointerLeave={(event) => handlePointerLeave(event, note.id)}
                 onLostPointerCapture={() => undefined}
                 onKeyDown={(event) => {
                   if ((event.key === "Enter" || event.key === " ") && !event.repeat) {
-                    if (!sustainEnabledRef.current) {
-                      event.preventDefault();
-                      startNote(note.id);
-                    }
+                    event.preventDefault();
+                    startNote(note.id);
                   }
                 }}
                 onKeyUp={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
-                    if (!sustainEnabledRef.current) stopNote(note.id);
+                    stopNote(note.id, sustainEnabledRef.current);
                   }
                 }}
                 onBlur={() => stopNote(note.id)}
