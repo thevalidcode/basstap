@@ -1,20 +1,13 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import CustomSelect from "./components/CustomSelect";
 import {
+  BASS_KEYPAD_NOTES,
   CHROMATIC_KEYS,
   type ChromaticKey,
+  type SoundStyle,
+  getBassPlaybackSample,
 } from "./music";
-
-const SCALE_DEGREES = [
-  { degree: 1, solfege: "DO" },
-  { degree: 2, solfege: "RE" },
-  { degree: 3, solfege: "MI" },
-  { degree: 4, solfege: "FA" },
-  { degree: 5, solfege: "SOL" },
-  { degree: 6, solfege: "LA" },
-  { degree: 7, solfege: "TI" },
-  { degree: 8, solfege: "DO" },
-] as const;
+import { BassAudioEngine } from "./audio/BassAudioEngine";
 
 function BassMark() {
   return (
@@ -29,6 +22,88 @@ function BassMark() {
 
 export default function App() {
   const [selectedKey, setSelectedKey] = useState<ChromaticKey>("C");
+  const [soundStyle, setSoundStyle] = useState<SoundStyle>("finger");
+  const [showChromatic, setShowChromatic] = useState(false);
+  const [pressedNotes, setPressedNotes] = useState<Set<string>>(new Set());
+  const engineRef = useRef<BassAudioEngine | null>(null);
+  const soundStyleRef = useRef(soundStyle);
+  const selectedKeyRef = useRef(selectedKey);
+
+  if (!engineRef.current) engineRef.current = new BassAudioEngine();
+
+  useEffect(() => {
+    soundStyleRef.current = soundStyle;
+  }, [soundStyle]);
+
+  useEffect(() => {
+    selectedKeyRef.current = selectedKey;
+  }, [selectedKey]);
+
+  useEffect(() => {
+    const engine = engineRef.current!;
+    engine.stopAll();
+    setPressedNotes(new Set());
+
+    void engine.preload(soundStyle, ["C"]).catch((error) => {
+      console.error(error);
+    });
+  }, [selectedKey, soundStyle]);
+
+  useEffect(() => {
+    const stopEverything = () => {
+      engineRef.current?.stopAll();
+      setPressedNotes(new Set());
+    };
+    window.addEventListener("blur", stopEverything);
+    window.addEventListener("pointercancel", stopEverything);
+    return () => {
+      window.removeEventListener("blur", stopEverything);
+      window.removeEventListener("pointercancel", stopEverything);
+      engineRef.current?.dispose();
+    };
+  }, []);
+
+  const visibleNotes = BASS_KEYPAD_NOTES.filter(
+    (note) => !note.chromatic || showChromatic,
+  );
+
+  const startNote = (noteId: string) => {
+    const note = BASS_KEYPAD_NOTES.find((item) => item.id === noteId);
+    if (!note) return;
+    setPressedNotes((current) => new Set(current).add(noteId));
+    const sample = getBassPlaybackSample(
+      selectedKeyRef.current,
+      note,
+      soundStyleRef.current,
+    );
+    void engineRef.current?.play(
+      noteId,
+      soundStyleRef.current,
+      sample.pitchName,
+      sample.playbackSemitones,
+    ).catch((error) => {
+      console.error(error);
+    });
+  };
+
+  const stopNote = (noteId: string) => {
+    engineRef.current?.stop(noteId);
+    setPressedNotes((current) => {
+      const next = new Set(current);
+      next.delete(noteId);
+      return next;
+    });
+  };
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>, noteId: string) => {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    startNote(noteId);
+  };
+
+  const handlePointerLeave = (event: React.PointerEvent<HTMLButtonElement>, noteId: string) => {
+    stopNote(noteId);
+  };
 
   return (
     <div className="app-shell">
@@ -53,18 +128,57 @@ export default function App() {
                 onChange={setSelectedKey}
                 formatOption={(key) => key}
               />
+              <CustomSelect
+                id="sound-style"
+                label="Sound"
+                value={soundStyle}
+                options={["finger", "pick"]}
+                onChange={setSoundStyle}
+                formatOption={(style) => style === "finger" ? "Fingerstyle" : "Pick"}
+              />
             </div>
+            <label className="chromatic-toggle">
+              <span>Show Chromatic Notes</span>
+              <input
+                type="checkbox"
+                checked={showChromatic}
+                onChange={(event) => setShowChromatic(event.target.checked)}
+              />
+              <span className="toggle-track" aria-hidden="true">
+                <span className="toggle-thumb" />
+              </span>
+            </label>
           </div>
-          <div className="keypad" role="group" aria-label={`${selectedKey} Major scale degrees`}>
-            {SCALE_DEGREES.map(({ degree, solfege }) => (
+          <div className="scale-heading" aria-live="polite">
+            <strong>{selectedKey} Major</strong>
+            <span>Do through Upper Do</span>
+          </div>
+          <div className="keypad" role="group" aria-label={`${selectedKey} Major bass solfege keypad`}>
+            {visibleNotes.map((note) => (
               <button
-                className="pad-button"
+                className={`pad-button${pressedNotes.has(note.id) ? " is-pressed" : ""}`}
                 type="button"
-                key={degree}
-                aria-label={`Scale degree ${degree}, ${solfege}`}
+                key={note.id}
+                aria-label={`${note.solfege}, scale degree ${note.degree}`}
+                aria-pressed={pressedNotes.has(note.id)}
+                onPointerDown={(event) => handlePointerDown(event, note.id)}
+                onPointerUp={() => stopNote(note.id)}
+                onPointerCancel={() => stopNote(note.id)}
+                onPointerLeave={(event) => handlePointerLeave(event, note.id)}
+                onLostPointerCapture={() => stopNote(note.id)}
+                onKeyDown={(event) => {
+                  if ((event.key === "Enter" || event.key === " ") && !event.repeat) {
+                    event.preventDefault();
+                    startNote(note.id);
+                  }
+                }}
+                onKeyUp={(event) => {
+                  if (event.key === "Enter" || event.key === " ") stopNote(note.id);
+                }}
+                onBlur={() => stopNote(note.id)}
               >
-                <span className="degree">{degree}</span>
-                <span className="solfege">{solfege}</span>
+                <span className="degree">{note.degree}</span>
+                <span className="solfege">{note.solfege}</span>
               </button>
             ))}
           </div>
@@ -74,7 +188,7 @@ export default function App() {
       <footer className="footer">
         <p>
           Made by{" "}
-          <a href="https://thevalidcode.is-a.dev" target="_blank" rel="noreferrer">
+          <a href="https://thevalidcreative.com" target="_blank" rel="noreferrer">
             Valid
           </a>
         </p>

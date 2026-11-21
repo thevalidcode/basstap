@@ -235,7 +235,7 @@ Connect with me:
 - **Instagram:** [@thevalidcode](https://instagram.com/thevalidcode)
 - **LinkedIn:** [@thevalidcode](https://linkedin.com/in/thevalidcode)
 - **X (Twitter):** [@thevalidcode](https://x.com/thevalidcode)
-- **Portfolio:** [thevalidcode.is-a.dev](https://thevalidcode.is-a.dev)
+- **Portfolio:** [thevalidcreative.com](https://thevalidcreative.com)
 - **GitHub:** [@thevalidcode](https://github.com/thevalidcode)
 
 ---
